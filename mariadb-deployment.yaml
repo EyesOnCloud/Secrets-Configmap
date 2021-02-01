@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      containers:
+      - name: mariadb
+        image: docker.io/mariadb:10.4
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-root-password
+                key: password
+        envFrom:
+        - secretRef:
+            name: mariadb-user-creds
+        ports:
+        - name: custom
+          containerPort: 3306
+          protocol: TCP
+        volumeMounts:
+        - name: mariadb-volume-1
+          mountPath: /var/lib/mysql
+        - name: mariadb-config-volume
+          mountPath: /etc/mysql/conf.d
+      volumes:
+      - name: mariadb-volume-1
+        emptyDir: {}
+      - name: mariadb-config-volume
+        configMap:
+          name: mariadb-config
+          items:
+            - key: max_allowed_packet.cnf
+              path: max_allowed_packet.cnf
